@@ -1,0 +1,17 @@
+# .NET build output
+bin/
+obj/
+*.user
+*.suo
+
+# IDE
+.vs/
+.idea/
+*.swp
+
+# Benchmark data (генерятся запуском)
+data/results.json
+data/report.md
+
+# Secrets
+appsettings.json.local

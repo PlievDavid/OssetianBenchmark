@@ -1,0 +1,242 @@
+[
+  {
+    "id": "erg_001",
+    "category": "Ergativity",
+    "type": "multiple_choice",
+    "prompt": "Кæцы хъуыдыйад раст у?\n1) Æз чиныг бакастæн.\n2) Мæнæй чиныг бакаст.\nОтвечай ТОЛЬКО номером правильного варианта (1 или 2).",
+    "expectedAnswer": "2",
+    "ruleCheck": {
+      "mustContain": ["2"],
+      "mustNotContain": ["1"]
+    },
+    "verified": true
+  },
+  {
+    "id": "erg_002",
+    "category": "Ergativity",
+    "type": "multiple_choice",
+    "prompt": "Выбери правильный вариант (прошедшее время, переходный глагол).\n1) Мæнæй ног хæдзар аразгæйæ арæзт æрцыд.\n2) Æз ног хæдзар арæзтон.\nОтвечай ТОЛЬКО номером правильного варианта (1 или 2).",
+    "expectedAnswer": "1",
+    "ruleCheck": {
+      "mustContain": ["1"],
+      "mustNotContain": ["2"]
+    },
+    "verified": false
+  },
+  {
+    "id": "erg_003",
+    "category": "Ergativity",
+    "type": "multiple_choice",
+    "prompt": "Как правильно оформить подлежащее в прошедшем времени при переходном глаголе «фыссын» (писать)?\n1) Æз фыстæг ныффыстой.\n2) Мæнæй фыстæг ныффыст æрцыд.\nОтвечай ТОЛЬКО номером правильного варианта (1 или 2).",
+    "expectedAnswer": "2",
+    "ruleCheck": {
+      "mustContain": ["2"],
+      "mustNotContain": ["1"]
+    },
+    "verified": false
+  },
+  {
+    "id": "erg_004",
+    "category": "Ergativity",
+    "type": "multiple_choice",
+    "prompt": "В каком предложении верно показан эргативный падеж при переходном глаголе в прошлом?\n1) Ды бæлас ралыгъд кодтай.\n2) Дæуæй бæлас ралыгъд æрцыд.\nОтвечай ТОЛЬКО номером правильного варианта (1 или 2).",
+    "expectedAnswer": "2",
+    "ruleCheck": {
+      "mustContain": ["2"],
+      "mustNotContain": ["1"]
+    },
+    "verified": false
+  },
+  {
+    "id": "post_001",
+    "category": "Postpositions",
+    "type": "multiple_choice",
+    "prompt": "Как сказать «в доме» правильно?\n1) у хæдзарæ\n2) хæдзары мидæг\n3) в хæдзары\nОтвечай ТОЛЬКО номером правильного варианта (1, 2 или 3).",
+    "expectedAnswer": "2",
+    "ruleCheck": {
+      "mustContain": ["2"],
+      "mustNotContain": ["1", "3"]
+    },
+    "verified": true
+  },
+  {
+    "id": "post_002",
+    "category": "Postpositions",
+    "type": "multiple_choice",
+    "prompt": "Как сказать «на столе» правильно?\n1) на стол\n2) столы бæлвырдæй\n3) столыл\nОтвечай ТОЛЬКО номером правильного варианта (1, 2 или 3).",
+    "expectedAnswer": "3",
+    "ruleCheck": {
+      "mustContain": ["3"],
+      "mustNotContain": ["1", "2"]
+    },
+    "verified": true
+  },
+  {
+    "id": "post_003",
+    "category": "Postpositions",
+    "type": "multiple_choice",
+    "prompt": "Как правильно сказать «для тебя»?\n1) для ды\n2) дæуæн\n3) для тебя\nОтвечай ТОЛЬКО номером правильного варианта (1, 2 или 3).",
+    "expectedAnswer": "2",
+    "ruleCheck": {
+      "mustContain": ["2"],
+      "mustNotContain": ["1", "3"]
+    },
+    "verified": true
+  },
+  {
+    "id": "post_004",
+    "category": "Postpositions",
+    "type": "multiple_choice",
+    "prompt": "Как правильно сказать «со мной» (вместе со мной)?\n1) с мæ\n2) мæимæ\n3) со мной\nОтвечай ТОЛЬКО номером правильного варианта (1, 2 или 3).",
+    "expectedAnswer": "2",
+    "ruleCheck": {
+      "mustContain": ["2"],
+      "mustNotContain": ["1", "3"]
+    },
+    "verified": true
+  },
+  {
+    "id": "cal_001",
+    "category": "AntiCalque",
+    "type": "multiple_choice",
+    "prompt": "Как правильно сказать «мне нравится» (букв. «мне приходится по душе»)?\n1) Мæнæ уарзон у.\n2) Мæ ныфс æй уадзы.\n3) Мæ зæрдæмæ фæцыд.\nОтвечай ТОЛЬКО номером правильного варианта (1, 2 или 3).",
+    "expectedAnswer": "3",
+    "ruleCheck": {
+      "mustContain": ["3"],
+      "mustNotContain": ["1", "2"]
+    },
+    "verified": false
+  },
+  {
+    "id": "cal_002",
+    "category": "AntiCalque",
+    "type": "multiple_choice",
+    "prompt": "Как правильно сказать «у меня есть» (букв. «мне есть»)?\n1) У меня есть чиныг.\n2) Мæн ис чиныг.\n3) Мæ чиныг уæд ис.\nОтвечай ТОЛЬКО номером правильного варианта (1, 2 или 3).",
+    "expectedAnswer": "2",
+    "ruleCheck": {
+      "mustContain": ["2"],
+      "mustNotContain": ["1", "3"]
+    },
+    "verified": true
+  },
+  {
+    "id": "cal_003",
+    "category": "AntiCalque",
+    "type": "multiple_choice",
+    "prompt": "Какое предложение НЕ является русской калькой и звучит естественно?\n1) Æз мадæмæ грамматикæйы урокмæ ацыдтæн.\n2) Æз радзырдта æмæ ног чиныг ныффыста.\n3) Цы хуызæн æртæ къухæй имæ бафтыд.\nОтвечай ТОЛЬКО номером правильного варианта.",
+    "expectedAnswer": "1",
+    "ruleCheck": {
+      "mustContain": ["1"],
+      "mustNotContain": ["2", "3"]
+    },
+    "verified": false
+  },
+  {
+    "id": "cal_004",
+    "category": "AntiCalque",
+    "type": "multiple_choice",
+    "prompt": "Как правильно спросить «Как тебя зовут?»?\n1) Как тебя зовут?\n2) Цы хуыд дæ дæу?\n3) Дæ ном цы у?\nОтвечай ТОЛЬКО номером правильного варианта.",
+    "expectedAnswer": "3",
+    "ruleCheck": {
+      "mustContain": ["3"],
+      "mustNotContain": ["1", "2"]
+    },
+    "verified": false
+  },
+  {
+    "id": "lex_001",
+    "category": "Lexicon",
+    "type": "multiple_choice",
+    "prompt": "Выбери исконно осетинское слово вместо русизма:\n1) базар\n2) хæрæг\n3) рыно\nОтвечай ТОЛЬКО номером правильного варианта.",
+    "expectedAnswer": "2",
+    "ruleCheck": {
+      "mustContain": ["2"],
+      "mustNotContain": ["1", "3"]
+    },
+    "verified": true
+  },
+  {
+    "id": "lex_002",
+    "category": "Lexicon",
+    "type": "multiple_choice",
+    "prompt": "Выбери исконно осетинское слово для «хлеб»:\n1) хæдзар\n2) чъиры\n3) кæф \nОтвечай ТОЛЬКО номером правильного варианта.",
+    "expectedAnswer": "2",
+    "ruleCheck": {
+      "mustContain": ["2"],
+      "mustNotContain": ["1", "3"]
+    },
+    "verified": false
+  },
+  {
+    "id": "lex_003",
+    "category": "Lexicon",
+    "type": "multiple_choice",
+    "prompt": "Выбери исконно осетинское слово вместо русизма «машина»:\n1) хæдтæхæг\n2) автомобиль\n3) машинæ\nОтвечай ТОЛЬКО номером правильного варианта.",
+    "expectedAnswer": "1",
+    "ruleCheck": {
+      "mustContain": ["1"],
+      "mustNotContain": ["2", "3"]
+    },
+    "verified": false
+  },
+  {
+    "id": "lex_004",
+    "category": "Lexicon",
+    "type": "multiple_choice",
+    "prompt": "Выбери исконно осетинское слово для «снег»:\n1) снæг\n2) мит\n3) снег\nОтвечай ТОЛЬКО номером правильного варианта.",
+    "expectedAnswer": "2",
+    "ruleCheck": {
+      "mustContain": ["2"],
+      "mustNotContain": ["1", "3"]
+    },
+    "verified": true
+  },
+  {
+    "id": "orth_001",
+    "category": "Orthography",
+    "type": "multiple_choice",
+    "prompt": "Какое написание правильное (буква ӕ)?\n1) бæлас\n2) белас\n3) балæс\nОтвечай ТОЛЬКО номером правильного варианта.",
+    "expectedAnswer": "1",
+    "ruleCheck": {
+      "mustContain": ["1"],
+      "mustNotContain": ["2", "3"]
+    },
+    "verified": true
+  },
+  {
+    "id": "orth_002",
+    "category": "Orthography",
+    "type": "multiple_choice",
+    "prompt": "Как правильно написать слово «осетинский»?\n1) ирон\n2) ирoн\n3) ирæн\nОтвечай ТОЛЬКО номером правильного варианта.",
+    "expectedAnswer": "1",
+    "ruleCheck": {
+      "mustContain": ["1"],
+      "mustNotContain": ["2", "3"]
+    },
+    "verified": true
+  },
+  {
+    "id": "orth_003",
+    "category": "Orthography",
+    "type": "multiple_choice",
+    "prompt": "Найди правильное написание со словом «ӕ»:\n1) нæ\n2) на\n3) нä\nОтвечай ТОЛЬКО номером правильного варианта.",
+    "expectedAnswer": "1",
+    "ruleCheck": {
+      "mustContain": ["1"],
+      "mustNotContain": ["2", "3"]
+    },
+    "verified": true
+  },
+  {
+    "id": "orth_004",
+    "category": "Orthography",
+    "type": "multiple_choice",
+    "prompt": "Какое написание слова правильно?\n1) дзæллаг\n2) джæллаг\n3) дзæлаг\nОтвечай ТОЛЬКО номером правильного варианта.",
+    "expectedAnswer": "1",
+    "ruleCheck": {
+      "mustContain": ["1"],
+      "mustNotContain": ["2", "3"]
+    },
+    "verified": true
+  }
+]
