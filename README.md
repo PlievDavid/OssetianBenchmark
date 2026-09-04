@@ -182,3 +182,4 @@ OssetianBenchmark/
 
 Сводные цифры актуального прогона 60 задач см. в `data/report.md` и `data/benchmark.xlsx`,
 которые генерируются прямо в `bin\Debug\net8.0\data\`.
+Результаты последнего прогона: https://drive.google.com/drive/folders/1F_hCFd-m8At9hA6OwCPWyei0dlK10S1T?usp=drive_link
