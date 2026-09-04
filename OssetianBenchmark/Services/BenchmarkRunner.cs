@@ -6,117 +6,203 @@ using Spectre.Console;
 public class BenchmarkRunner
 {
     private readonly BenchmarkConfig _config;
-    private readonly LlmClient _client;
     private readonly RuleBasedEvaluator _ruleEvaluator;
-    private readonly LlmJudgeEvaluator _judgeEvaluator;
+    private readonly ChatJudgeEvaluator _judgeEvaluator;
     private readonly ResultsStorage _storage;
+    private readonly Dictionary<string, IChatConnector> _connectors;
 
     public BenchmarkRunner(
         BenchmarkConfig config,
-        LlmClient client,
         RuleBasedEvaluator ruleEvaluator,
-        LlmJudgeEvaluator judgeEvaluator,
-        ResultsStorage storage)
+        ChatJudgeEvaluator judgeEvaluator,
+        ResultsStorage storage,
+        Dictionary<string, IChatConnector> connectors)
     {
         _config = config;
-        _client = client;
         _ruleEvaluator = ruleEvaluator;
         _judgeEvaluator = judgeEvaluator;
         _storage = storage;
+        _connectors = connectors;
     }
 
-    public Task RunAsync(List<BenchmarkTask> tasks, CancellationToken ct = default)
+    public async Task RunAsync(List<BenchmarkTask> tasks, CancellationToken ct = default)
     {
-        var concurrency = _config.MaxConcurrency > 0 ? _config.MaxConcurrency : 1;
+        var models = _config.Models;
+        var totalSteps = tasks.Count * (models.Count - 1);
         var completed = 0;
 
-        var options = new ParallelOptions
+        for (var taskIdx = 0; taskIdx < tasks.Count; taskIdx++)
         {
-            MaxDegreeOfParallelism = concurrency,
-            CancellationToken = ct,
-        };
+            var task = tasks[taskIdx];
+            var judgeIdx = taskIdx % models.Count;
+            var judgeModel = models[judgeIdx];
+            var candidateModels = models.Where((_, i) => i != judgeIdx).ToList();
 
-        var interactive = AnsiConsole.Profile.Capabilities.Interactive;
+            Console.WriteLine();
+            Console.WriteLine($"===== Задача {taskIdx + 1}/{tasks.Count}: {task.Id} ({task.Category}) =====");
+            Console.WriteLine($"  Судья: {judgeModel} | Кандидаты: {string.Join(", ", candidateModels)}");
 
-        if (!interactive)
-        {
-            var fallback = new ProgressBar();
-            Console.WriteLine(fallback.Render(0, tasks.Count));
-
-            Parallel.ForEachAsync(tasks, options, async (task, token) =>
+            foreach (var candidateModel in candidateModels)
             {
-                var result = await RunSingleAsync(task, token).ConfigureAwait(false);
+                ct.ThrowIfCancellationRequested();
+
+                if (!_connectors.TryGetValue(candidateModel, out var candidateConnector))
+                {
+                    Console.WriteLine($"  !! Коннектор '{candidateModel}' не найден, пропуск.");
+                    continue;
+                }
+
+                Console.WriteLine($"  -> Кандидат: {candidateModel}");
+                await candidateConnector.ResetChatAsync(ct).ConfigureAwait(false);
+
+                var result = await RunCandidateAsync(task, candidateModel, ct).ConfigureAwait(false);
                 _storage.Save(result);
 
+                if (!string.IsNullOrEmpty(result.Error))
+                    Console.WriteLine($"  !! Ошибка: {result.Error}");
+                else
+                    Console.WriteLine($"  OK Ответ: {result.ModelResponse.Length} символов, RuleScore={result.RuleScore:F2}");
+
                 var done = Interlocked.Increment(ref completed);
-                Console.WriteLine(fallback.Render(done, tasks.Count));
-            }).GetAwaiter().GetResult();
+                var pct = (double)done / totalSteps * 100;
+                Console.WriteLine($"  == Прогресс: {done}/{totalSteps} ({pct:F0}%)");
+            }
 
-            return Task.CompletedTask;
-        }
+            Console.WriteLine($"  --- Судейство ({judgeModel}) ---");
 
-        AnsiConsole.Live(new Text(""))
-            .Start(ctx =>
+            if (!_connectors.TryGetValue(judgeModel, out var judgeConnector))
             {
-                var progress = new ProgressBar();
-                ctx.UpdateTarget(new Markup(progress.Render(0, tasks.Count)));
-                var semaphore = new SemaphoreSlim(1, 1);
+                Console.WriteLine($"  !! Коннектор судьи '{judgeModel}' не найден.");
+            }
+            else
+            {
+                await judgeConnector.ResetChatAsync(ct).ConfigureAwait(false);
 
-                Parallel.ForEachAsync(tasks, options, async (task, token) =>
+                foreach (var candidateModel in candidateModels)
                 {
-                    var result = await RunSingleAsync(task, token).ConfigureAwait(false);
-                    _storage.Save(result);
+                    ct.ThrowIfCancellationRequested();
 
-                    Interlocked.Increment(ref completed);
-                    await semaphore.WaitAsync(token).ConfigureAwait(false);
-                    try
-                    {
-                        ctx.UpdateTarget(new Markup(progress.Render(completed, tasks.Count)));
-                    }
-                    finally
-                    {
-                        semaphore.Release();
-                    }
-                }).GetAwaiter().GetResult();
-            });
+                    await judgeConnector.ResetChatAsync(ct).ConfigureAwait(false);
+                    await JudgeCandidateAsync(task, candidateModel, judgeModel, judgeConnector, ct).ConfigureAwait(false);
+                }
+            }
 
-        return Task.CompletedTask;
+            _storage.SaveBatch(GetResultsForTask(task.Id));
+
+            foreach (var candidateModel in candidateModels)
+            {
+                var r = _storage.GetAll().FirstOrDefault(x => x.TaskId == task.Id && x.CandidateModel == candidateModel);
+                if (r is not null)
+                    Console.WriteLine($"  {candidateModel}: Rule={r.RuleScore:F2} Judge={r.AverageJudgeScore:F2} Final={r.FinalScore:F2} [{r.Verdict()}]");
+            }
+        }
     }
 
-    private async Task<BenchmarkResult> RunSingleAsync(BenchmarkTask task, CancellationToken ct)
+    private async Task<BenchmarkResult> RunCandidateAsync(BenchmarkTask task, string candidateModel, CancellationToken ct)
     {
         var result = new BenchmarkResult
         {
             TaskId = task.Id,
+            Type = task.Type,
             Category = task.Category,
             Prompt = task.Prompt,
             ExpectedAnswer = task.ExpectedAnswer,
+            CandidateModel = candidateModel,
             Verified = task.Verified,
             CompletedAtUtc = DateTime.UtcNow,
         };
 
+        if (!_connectors.TryGetValue(candidateModel, out var connector))
+        {
+            result.Error = $"Коннектор для модели '{candidateModel}' не найден.";
+            return result;
+        }
+
         try
         {
-            var response = await _client.CompleteAsync(_config.TestedModel, task.Prompt, ct: ct).ConfigureAwait(false);
+            var prompt = task.Prompt + "\n\nНе ищи ответ в интернете.";
+
+            Console.WriteLine($"  [{candidateModel}] Отправка промпта...");
+            var response = await connector.CompleteAsync(prompt, ct: ct).ConfigureAwait(false);
+            Console.WriteLine($"  [{candidateModel}] Получен ответ: {response.Length} символов");
             result.ModelResponse = response;
 
-            result.RuleScore = _ruleEvaluator.Evaluate(task, response);
-
-            var judge = await _judgeEvaluator.ScoreAsync(task, response, ct).ConfigureAwait(false);
-            result.JudgeScore = judge;
-
-            result.FinalScore = 0.4 * result.RuleScore + 0.6 * judge.Normalized;
-            result.FinalScore = Math.Clamp(result.FinalScore, 0.0, 1.0);
+            if (task.Type == "open_ended")
+            {
+                result.AlgoScore = TextSimilarity.AlgoScore(task.ExpectedAnswer, response);
+                result.RuleScore = 0.0;
+                Console.WriteLine($"  [{candidateModel}] AlgoScore: {result.AlgoScore:F2}");
+            }
+            else
+            {
+                result.RuleScore = _ruleEvaluator.Evaluate(task, response);
+                Console.WriteLine($"  [{candidateModel}] RuleScore: {result.RuleScore:F2}");
+            }
         }
         catch (Exception ex)
         {
-            result.Error = ex.Message;
-            result.ModelResponse = "";
+            Console.WriteLine($"  [{candidateModel}] ИСКЛЮЧЕНИЕ: {ex.Message}");
+            result.Error = $"Ошибка кандидата: {ex.Message}";
             result.RuleScore = 0.0;
-            result.JudgeScore = null;
-            result.FinalScore = 0.0;
         }
 
         return result;
+    }
+
+    private async Task JudgeCandidateAsync(BenchmarkTask task, string candidateModel, string judgeModel, IChatConnector judgeConnector, CancellationToken ct)
+    {
+        var result = _storage.GetAll().FirstOrDefault(
+            r => r.TaskId == task.Id && r.CandidateModel == candidateModel);
+
+        if (result is null || string.IsNullOrEmpty(result.ModelResponse))
+        {
+            Console.WriteLine($"  [{candidateModel}] Пропуск судейства (нет ответа).");
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(result.Error))
+        {
+            Console.WriteLine($"  [{candidateModel}] Пропуск судейства (ошибка кандидата).");
+            return;
+        }
+
+        Console.WriteLine($"  [{judgeModel}] Судит {candidateModel}...");
+
+        try
+        {
+            var isOpenEnded = task.Type == "open_ended";
+            var judgeScore = await _judgeEvaluator.ScoreAsync(judgeConnector, task, result.ModelResponse, isOpenEnded, ct).ConfigureAwait(false);
+            result.JudgeScores.Add(new JudgeEntry { JudgeModel = judgeModel, JudgeScore = judgeScore });
+            Console.WriteLine($"  [{judgeModel}] Оценка: {judgeScore.Total}/8 (G={judgeScore.Grammar} L={judgeScore.Lexicon} M={judgeScore.Match} S={judgeScore.Style})");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"  [{judgeModel}] ОШИБКА судьи: {ex.Message}");
+        }
+
+        if (result.JudgeScores.Count > 0)
+        {
+            var validScores = result.JudgeScores
+                .Where(j => j.JudgeScore is not null)
+                .Select(j => j.JudgeScore!.Normalized)
+                .ToList();
+
+            result.AverageJudgeScore = validScores.Count > 0 ? validScores.Average() : 0.0;
+        }
+
+        if (task.Type == "open_ended")
+        {
+            result.FinalScore = 0.5 * result.AlgoScore + 0.5 * result.AverageJudgeScore;
+        }
+        else
+        {
+            result.FinalScore = 0.4 * result.RuleScore + 0.6 * result.AverageJudgeScore;
+        }
+        result.FinalScore = Math.Clamp(result.FinalScore, 0.0, 1.0);
+    }
+
+    private IEnumerable<BenchmarkResult> GetResultsForTask(string taskId)
+    {
+        return _storage.GetAll().Where(r => r.TaskId == taskId);
     }
 }

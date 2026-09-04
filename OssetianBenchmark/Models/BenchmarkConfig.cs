@@ -33,4 +33,13 @@ public class BenchmarkConfig
 
     [JsonPropertyName("ReportFile")]
     public string ReportFile { get; set; } = "data/report.md";
+
+    [JsonPropertyName("Models")]
+    public List<string> Models { get; set; } = new();
+
+    [JsonPropertyName("ExcelFile")]
+    public string ExcelFile { get; set; } = "data/benchmark.xlsx";
+
+    [JsonPropertyName("Headless")]
+    public bool Headless { get; set; } = false;
 }

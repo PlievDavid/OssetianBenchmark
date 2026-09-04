@@ -1,6 +1,7 @@
 namespace OssetianBenchmark.Services;
 
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using OssetianBenchmark.Models;
 
 public class ResultsStorage
@@ -32,7 +33,6 @@ public class ResultsStorage
             }
             catch (JsonException)
             {
-                // Игнорируем повреждённый файл и начинаем заново.
             }
         }
     }
@@ -41,7 +41,8 @@ public class ResultsStorage
     {
         lock (_lock)
         {
-            var existing = _results.FirstOrDefault(r => r.TaskId == result.TaskId);
+            var existing = _results.FirstOrDefault(
+                r => r.TaskId == result.TaskId && r.CandidateModel == result.CandidateModel);
             if (existing is not null)
             {
                 _results[_results.IndexOf(existing)] = result;
@@ -61,5 +62,39 @@ public class ResultsStorage
         }
     }
 
-    public IReadOnlyList<BenchmarkResult> GetAll() => _results;
+    public void SaveBatch(IEnumerable<BenchmarkResult> batch)
+    {
+        lock (_lock)
+        {
+            foreach (var result in batch)
+            {
+                var existing = _results.FirstOrDefault(
+                    r => r.TaskId == result.TaskId && r.CandidateModel == result.CandidateModel);
+                if (existing is not null)
+                {
+                    _results[_results.IndexOf(existing)] = result;
+                }
+                else
+                {
+                    _results.Add(result);
+                }
+            }
+
+            var directory = Path.GetDirectoryName(_resultsFile);
+            if (!string.IsNullOrEmpty(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            File.WriteAllText(_resultsFile, JsonSerializer.Serialize(_results, Options));
+        }
+    }
+
+    public IReadOnlyList<BenchmarkResult> GetAll()
+    {
+        lock (_lock)
+        {
+            return _results.ToList();
+        }
+    }
 }

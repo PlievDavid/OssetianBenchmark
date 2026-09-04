@@ -4,41 +4,39 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using OssetianBenchmark.Models;
 
-public class LlmJudgeEvaluator
+public class ChatJudgeEvaluator
 {
-    private readonly LlmClient _client;
-    private readonly BenchmarkConfig _config;
-
     private const string JudgeSystemPrompt =
         "Ты — эксперт по осетинскому языку (ирон æвзаг). Оцени ответ языковой модели строго по 4 критериям (каждый от 0 до 2): " +
         "GRAMMAR (падежи, эргативность, согласование), LEXICON (отсутствие русских кальк, правильный выбор слов), " +
         "MATCH (соответствие эталонному ответу), STYLE (естественность для носителя). " +
         "Верни СТРОГО один JSON-объект без markdown-обёрток и без пояснений вне JSON.";
 
-    public LlmJudgeEvaluator(LlmClient client, BenchmarkConfig config)
-    {
-        _client = client;
-        _config = config;
-    }
-
     public async Task<JudgeScore> ScoreAsync(
+        IChatConnector judge,
         BenchmarkTask task,
         string modelResponse,
+        bool isOpenEnded,
         CancellationToken ct = default)
     {
         var prompt =
             "ЗАДАЧА:\n" + task.Prompt +
             "\n\nЭТАЛОН:\n" + task.ExpectedAnswer +
             "\n\nОТВЕТ МОДЕЛИ:\n" + modelResponse +
+            (isOpenEnded ? "\n\nОбрати внимание: это диалог. Оцени, насколько ответ естественно вписывается в беседу." : "") +
             "\n\nВерни СТРОГО JSON без markdown-обёрток:\n" +
             "{\"grammar\":X,\"lexicon\":X,\"match\":X,\"style\":X,\"total\":X,\"reasoning\":\"кратко\"}";
 
-        var raw = await _client.CompleteAsync(_config.JudgeModel, prompt, JudgeSystemPrompt, ct).ConfigureAwait(false);
+        Console.WriteLine($"    [judge] Отправляю судейский промпт ({prompt.Length} символов)...");
+        var raw = await judge.CompleteAsync(prompt, JudgeSystemPrompt, ct).ConfigureAwait(false);
+        Console.WriteLine($"    [judge] Получен ответ ({raw.Length} символов): {Truncate(raw, 120)}");
 
-        return ParseScore(raw);
+        var score = ParseScore(raw);
+        Console.WriteLine($"    [judge] Парсинг: G={score.Grammar} L={score.Lexicon} M={score.Match} S={score.Style} Total={score.Total}");
+        return score;
     }
 
-    private JudgeScore ParseScore(string raw)
+    private static JudgeScore ParseScore(string raw)
     {
         var json = ExtractJson(raw);
 
@@ -100,4 +98,6 @@ public class LlmJudgeEvaluator
         var match = Regex.Match(raw, @"\{.*\}", RegexOptions.Singleline);
         return match.Success ? match.Value : raw;
     }
+
+    private static string Truncate(string s, int max) => s.Length <= max ? s : s[..max] + "...";
 }
